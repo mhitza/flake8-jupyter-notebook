@@ -18,7 +18,6 @@ fs.readFileSync(
   { encoding: 'utf8', flag: 'r' }
 ).split("\n").forEach((reported_error) => {
 
-  process.stdout.write(reported_error);
   let error_information = reported_error.match(flake8_error_format);
 
   if (error_information) {
@@ -29,22 +28,20 @@ fs.readFileSync(
     let filename       = error_information[1];
     let source_mapping = [];
 
-    console.log(Object.keys(cached_processing));
     if (cached_processing.hasOwnProperty(filename)) {
       source_mapping = cached_processing[filename];
     } else {
 
-      // we accumulated two off by one errors!
-      source_mapping = almost_absolute_code_line_numbers_map(
-        fs.readFileSync(filename, { encoding: 'utf8', flag: 'r' })
-          .split("\n")
-      );
+      let notebook_lines = fs.readFileSync(filename, { encoding: 'utf8', flag: 'r' }).split("\n");
+
+      notebook_lines.unshift(null); // this way offset lines to start at index 1
+
+      source_mapping = almost_absolute_code_line_numbers_map(notebook_lines);
 
       cached_processing[filename] = source_mapping;
     }
 
-    // repay our off by "ones" debt!
-    let line_number   = source_mapping[error_information[2]] + 2;
+    let line_number   = source_mapping[error_information[2]];
     // 4 is the indentation level of embeded source code, +1 for the quote character
     let column        = error_information[3] + 5;
     let error_message = `${error_information[4]} ${error_information[5]}`;
@@ -63,7 +60,7 @@ if (has_errors) {
 // HELPER FUNCTIONS
 
 function almost_absolute_code_line_numbers_map(lines) {
-  let mapping = [];
+  let mapping = [null];
 
   find_source_blocks(lines).forEach(({ source_line, lines_of_code }) => {
     for(let i = 0; i < lines_of_code; i++) {
@@ -79,13 +76,13 @@ function almost_absolute_code_line_numbers_map(lines) {
 function find_source_blocks(lines) {
   let source_blocks = [];
 
-  for(let i = 0; i < lines.length;) {
+  for(let i = 1; i < lines.length;) {
     let match = lines[i].match(/^\s{3}"source":/);
 
     if (match) {
       let count = count_source_lines(i, lines);
       source_blocks.push({
-        source_line: i,
+        source_line: i + 1,
         lines_of_code: count
       });
       i = i + count;
