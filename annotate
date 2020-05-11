@@ -1,0 +1,112 @@
+#!/usr/bin/env node
+// -*- mode: ruby -*-
+// vi: set ft=javascript :
+const fs = require('fs');
+
+
+// Example error
+// test.ipynb#In[2]:4:1: E305 expected 2 blank lines after class or function definition, found 1
+const flake8_error_format = new RegExp(/^([^#]+)[^:]*:(\d+):(\d+): (\w\d+) ([\s|\w]*)/);
+
+let has_errors = false;
+
+let cached_processing = {};
+
+
+fs.readFileSync(
+  0, // stdin
+  { encoding: 'utf8', flag: 'r' }
+).split("\n").forEach((reported_error) => {
+
+  let error_information = reported_error.match(flake8_error_format);
+
+  if (error_information) {
+    // only set to true at this point, as outside this if even an empty
+    // line as input would mark the script as an error
+    has_errors = true;
+
+    let filename       = error_information[1];
+    let source_mapping = [];
+
+    if (cached_processing.hasOwnProperty(filename)) {
+      source_mapping = cached_processing[filename];
+    } else {
+
+      // we accumulated two off by one errors!
+      source_mapping = almost_absolute_code_line_numbers_map(
+        fs.readFileSync(filename, { encoding: 'utf8', flag: 'r' })
+          .split("\n")
+      );
+
+      cached_processing[filename] = source_mapping;
+    }
+
+    // repay our off by "ones" debt!
+    let line_number   = source_mapping[error_information[2]] + 2;
+    // 4 is the indentation level of embeded source code, +1 for the quote character
+    let column        = error_information[3] + 5;
+    let error_message = `${error_information[4]} ${error_information[5]}`;
+    process.stdout.write(
+      `::error file=${filename},line=${line_number},col=${column}::${error_message}\n`
+    );
+  }
+});
+
+
+if (has_errors) {
+  process.exit(1);
+}
+
+
+// HELPER FUNCTIONS
+
+function almost_absolute_code_line_numbers_map(lines) {
+  let mapping = [];
+
+  find_source_blocks(lines).forEach(({ source_line, lines_of_code }) => {
+    for(let i = 0; i < lines_of_code; i++) {
+      mapping.push(source_line + i);
+    }
+  });
+
+  return mapping;
+}
+
+// locate within the notebook lines the source blocks, their starting
+// line, and number of lines of code contained within
+function find_source_blocks(lines) {
+  let source_blocks = [];
+
+  for(let i = 0; i < lines.length;) {
+    let match = lines[i].match(/^\s{3}"source":/);
+
+    if (match) {
+      let count = count_source_lines(i, lines);
+      source_blocks.push({
+        source_line: i,
+        lines_of_code: count
+      });
+      i = i + count;
+    } else {
+      i++;
+    }
+  }
+
+  return source_blocks;
+}
+
+function count_source_lines(source_property_line_number, content_lines) {
+  let counter = 0;
+  for(let i = source_property_line_number + 1; i < content_lines.length; i++) {
+    let match = content_lines[i].match(/^\s{4}"/);
+    if (match) {
+      counter++;
+    } else {
+      break;
+    }
+  }
+
+  return counter;
+}
+
+
