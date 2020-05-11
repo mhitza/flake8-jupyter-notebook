@@ -21,7 +21,7 @@ fs.readFileSync(
 ).split("\n").forEach((reported_error) => {
 
   if (debug) {
-    process.stdout.write(reported_error);
+    process.stdout.write(reported_error + "\n");
   }
 
   let error_information = reported_error.match(flake8_error_format);
