@@ -12,6 +12,7 @@ let has_errors = false;
 
 let cached_processing = {};
 
+console.log(process.env.DEBUG);
 const debug = process.env.DEBUG === 'true';
 
 
