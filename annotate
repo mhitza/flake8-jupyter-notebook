@@ -12,6 +12,8 @@ let has_errors = false;
 
 let cached_processing = {};
 
+let debug = process.env.DEBUG === 'true';
+
 
 fs.readFileSync(
   0, // stdin

@@ -1,5 +1,10 @@
 name: 'flake8-nb action'
 description: 'Does PEP8 validation for your python Jupyter Notebooks'
+inputs:
+  debug:
+    required: false
+    description: Dump debug information
+    default: false
 runs:
   using: 'docker'
   image: 'Dockerfile'
