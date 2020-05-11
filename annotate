@@ -13,7 +13,7 @@ let has_errors = false;
 let cached_processing = {};
 
 console.log(process.env.DEBUG);
-const debug = process.env.DEBUG === 'true';
+const debug = process.env.DEBUG === 1;
 
 
 fs.readFileSync(
