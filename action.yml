@@ -2,7 +2,7 @@ name: 'flake8-nb action'
 description: 'Does PEP8 validation for your python Jupyter Notebooks'
 inputs:
   debug:
-    required: false
+    required: true
     description: Dump debug information
     default: 0
 runs:
