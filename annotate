@@ -18,6 +18,7 @@ fs.readFileSync(
   { encoding: 'utf8', flag: 'r' }
 ).split("\n").forEach((reported_error) => {
 
+  process.stdout.write(reported_error);
   let error_information = reported_error.match(flake8_error_format);
 
   if (error_information) {
