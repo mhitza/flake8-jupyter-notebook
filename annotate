@@ -29,6 +29,7 @@ fs.readFileSync(
     let filename       = error_information[1];
     let source_mapping = [];
 
+    console.log(Object.keys(cached_processing));
     if (cached_processing.hasOwnProperty(filename)) {
       source_mapping = cached_processing[filename];
     } else {
