@@ -45,6 +45,15 @@ fs.readFileSync(
       source_mapping = almost_absolute_code_line_numbers_map(notebook_lines);
 
       cached_processing[filename] = source_mapping;
+
+      if (debug) {
+        source_mapping.forEach((mapping_line, i) => {
+          if (i === 0) return; // fake value we push at the front
+
+          console.log([i, mapping_line, notebook_lines[mapping_line]]);
+          process.stdout.write("\n");
+        });
+      }
     }
 
     let line_number   = source_mapping[error_information[2]];
