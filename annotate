@@ -71,6 +71,17 @@ for(let notebook_path of find_notebook_files('.')) {
 
     has_errors = true;
 
+    let { file_line_number, block_line_number } = absolute_line_number(
+      parseInt(error_information[2], 10),
+      source_blocks
+    );
+
+    if (error_information[4] === 'E302' && block_line_number === 0) {
+      // don't report on E302 expected 2 blank lines, found 0
+      // as it will be constantly reported for definitions at the top of the block
+      return;
+    }
+
     let line_number   = absolute_line_number(parseInt(error_information[2], 10), source_blocks);
     // 4 is the indentation level of embeded source code, +1 for the quote character
     let column        = error_information[3] + 5;
@@ -180,7 +191,10 @@ function absolute_line_number(reported_line_number, source_blocks) {
     for (let j = 0; j < lines_of_code; j++) {
       counter++;
       if (counter === reported_line_number) {
-        return source_line + j;
+        return {
+          file_line_number: source_line + j,
+          block_line_number: j
+        };
       }
     }
   }
