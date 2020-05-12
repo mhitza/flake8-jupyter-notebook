@@ -89,13 +89,12 @@ for(let notebook_path of find_notebook_files('.')) {
       return;
     }
 
-    let line_number   = absolute_line_number(parseInt(error_information[2], 10), source_blocks);
     // 4 is the indentation level of embeded source code, +1 for the quote character
     let column        = error_information[3] + 5;
     let error_message = `${error_information[4]} ${error_information[5]}`;
 
     process.stdout.write(
-      `::error file=${notebook_path},line=${line_number},col=${column}::${error_message}\n`
+      `::error file=${notebook_path},line=${file_line_number},col=${column}::${error_message}\n`
     );
   });
 }
