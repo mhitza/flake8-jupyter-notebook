@@ -113,12 +113,18 @@ function find_source_blocks(lines) {
   for(let i = 1; i < lines.length;) {
     let match = lines[i].match(/^\s{3}"source":/);
 
+    let cell_type = find_cell_type(i, lines);
+
     if (match) {
       let count = count_source_lines(i, lines);
-      source_blocks.push({
-        source_line: i + 1,
-        lines_of_code: count
-      });
+
+      if (cell_type === 'code') {
+        // skip anything else, like markdown
+        source_blocks.push({
+          source_line: i + 1,
+          lines_of_code: count
+        });
+      }
       i = i + count;
     } else {
       i++;
@@ -126,6 +132,22 @@ function find_source_blocks(lines) {
   }
 
   return source_blocks;
+}
+
+// rely on the fact that order of properties in a cell block is cell_type, metadata, source
+// and so looking backwards we should be able to find the cell_type in a few steps
+function find_cell_type(current_line, lines) {
+  for(let i = current_line - 1; i > 0; i--) {
+    let match = lines[i].match(/^\s{3}"cell_type":/);
+
+    if (match) {
+      let match_type = lines[i].match(/"([^"]+)",$/);
+
+      return match_type ? match_type[1] : null;
+    }
+  }
+
+  return null;
 }
 
 function count_source_lines(source_property_line_number, content_lines) {
