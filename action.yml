@@ -7,4 +7,4 @@ inputs:
     default: false
 runs:
   using: 'docker'
-  image: 'mhitza/flake8-jupyter-notebook-github-action'
+  image: 'docker://mhitza/flake8-jupyter-notebook-github-action:latest'
