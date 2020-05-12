@@ -7,7 +7,7 @@ const child_process = require('child_process');
 
 // Example error
 // test.ipynb#In[2]:4:1: E305 expected 2 blank lines after class or function definition, found 1
-const flake8_error_format = new RegExp(/^([^#]+)[^:]*:(\d+):(\d+): (\w\d+) ([\s|\w]*)/);
+const flake8_error_format = new RegExp(/^([^#]+)[^:]*:(\d+):(\d+): (\w\d+) (.*)/);
 
 let has_errors = false;
 
@@ -24,54 +24,69 @@ for(let notebook_path of find_notebook_files('.')) {
   let notebook_lines = fs.readFileSync(notebook_path, { encoding: 'utf8', flag: 'r' }).split("\n");
       notebook_lines.unshift(null); // this way offset lines to start at index 1
 
-  find_source_blocks(notebook_lines).forEach(({ source_line, lines_of_code }) => {
+  let source_blocks = find_source_blocks(notebook_lines);
 
-    let block     = notebook_lines.slice(source_line, source_line + lines_of_code);
-    let formatted = block.map((line) => {
-      return line // remove enclosing quotes and insert true newline
-        .trim()
-        .replace(/^"/, '')
-        .replace(/",?$/, '')
-        .replace(/\\n/, "\n");
-    }).join('');
+  let extracted_source_code = source_blocks
 
+    .map(({ source_line, lines_of_code }) => { // returns array of formatted lines; ready to join()
 
-    let reported_errors = child_process
-      .spawnSync('flake8', ['--exit-zero', '-'], { input: formatted, encoding: 'utf8' })
-      .stdout
-      .split("\n");
+      let source_code_lines = notebook_lines.slice(source_line, source_line + lines_of_code);
 
+      // add a newline at the last element of the array otherwise we're gonna have big troubles
+      // when mergin blocks, as the last line never contains a newline
+      source_code_lines[source_code_lines.length - 1] = source_code_lines[source_code_lines.length - 1]
+        .replace(/",?$/, '\n",');
 
-    reported_errors.forEach((reported_error) => {
-      if (debug) {
-        console.log(reported_error);
-      }
+      return source_code_lines.map((line) => {
+          return line // remove enclosing quotes and insert true newline & quotes
+            .trim()
+            .replace(/^"/, '')
+            .replace(/",?$/, '')
+            .replace(/\\n/g, "\n")
+            .replace(/\\"/g, '"');
+        });
+    })
 
-      let error_information = reported_error.match(flake8_error_format);
-      
-      if (!error_information) {
-        return;
-      }
-
-      // As we pass contents to flake8 via stdin it expects them to be python files,
-      // however in notebooks the last line of a code block does not end in a newline.
-      // We ignore these warnings
-      // W292 no newline at end of file
-      if (error_information[4] === 'W292') {
-        return;
-      }
-
-      has_errors = true;
-
-      let line_number   = source_line + parseInt(error_information[2], 10) - 1;
-      // 4 is the indentation level of embeded source code, +1 for the quote character
-      let column        = error_information[3] + 5;
-      let error_message = `${error_information[4]} ${error_information[5]}`;
-
-      process.stdout.write(
-        `::error file=${notebook_path},line=${line_number},col=${column}::${error_message}\n`
-      );
+    .reduce((accumulator, current) => { // without initial value accumulator is first value of array
+      return accumulator.concat(current);
     });
+
+
+  let reported_errors = child_process
+    .spawnSync('flake8', ['--exit-zero', '-'], { input: extracted_source_code.join(''), encoding: 'utf8' })
+    .stdout
+    .split("\n");
+
+
+  reported_errors.forEach((reported_error) => {
+    if (debug) {
+      console.log(reported_error);
+    }
+
+    let error_information = reported_error.match(flake8_error_format);
+    
+    if (!error_information) {
+      return;
+    }
+
+    // As we pass contents to flake8 via stdin it expects them to be python files,
+    // however in notebooks the last line of a code block does not end in a newline.
+    // We ignore these warnings
+    // W292 no newline at end of file
+    if (error_information[4] === 'W292') {
+      return;
+    }
+
+    has_errors = true;
+
+    let line_number   = absolute_line_number(parseInt(error_information[2], 10), source_blocks);
+    // 4 is the indentation level of embeded source code, +1 for the quote character
+    let column        = error_information[3] + 5;
+    let error_message = `${error_information[4]} ${error_information[5]}`;
+
+    process.stdout.write(
+      `::error file=${notebook_path},line=${line_number},col=${column}::${error_message}\n`
+    );
   });
 }
 
@@ -165,3 +180,16 @@ function count_source_lines(source_property_line_number, content_lines) {
 }
 
 
+function absolute_line_number(reported_line_number, source_blocks) {
+  let counter = 0; // a contignuous line number indicator, within the extracted source code
+
+  for(let i = 0; i < source_blocks.length; i++) {
+    let { source_line, lines_of_code } = source_blocks[i];
+    for (let j = 0; j < lines_of_code; j++) {
+      counter++;
+      if (counter === reported_line_number) {
+        return source_line + j;
+      }
+    }
+  }
+}
