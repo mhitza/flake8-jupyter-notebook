@@ -69,14 +69,6 @@ for(let notebook_path of find_notebook_files('.')) {
       return;
     }
 
-    // As we pass contents to flake8 via stdin it expects them to be python files,
-    // however in notebooks the last line of a code block does not end in a newline.
-    // We ignore these warnings
-    // W292 no newline at end of file
-    if (error_information[4] === 'W292') {
-      return;
-    }
-
     has_errors = true;
 
     let line_number   = absolute_line_number(parseInt(error_information[2], 10), source_blocks);
