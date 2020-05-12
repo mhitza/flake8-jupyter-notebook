@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // -*- mode: ruby -*-
 // vi: set ft=javascript :
-const fs = require('fs');
+const fs            = require('fs');
+const child_process = require('child_process');
 
 
 // Example error
@@ -15,56 +16,62 @@ let cached_processing = {};
 const debug = process.env.INPUT_DEBUG === 'true';
 
 
-fs.readFileSync(
-  0, // stdin
-  { encoding: 'utf8', flag: 'r' }
-).split("\n").forEach((reported_error) => {
-
+for(let notebook_path of find_notebook_files('.')) {
   if (debug) {
-    process.stdout.write(reported_error + "\n");
+    process.stdout.write(notebook_path + "\n");
   }
 
-  let error_information = reported_error.match(flake8_error_format);
-
-  if (error_information) {
-    // only set to true at this point, as outside this if even an empty
-    // line as input would mark the script as an error
-    has_errors = true;
-
-    let filename       = error_information[1];
-    let source_mapping = [];
-
-    if (cached_processing.hasOwnProperty(filename)) {
-      source_mapping = cached_processing[filename];
-    } else {
-
-      let notebook_lines = fs.readFileSync(filename, { encoding: 'utf8', flag: 'r' }).split("\n");
-
+  let notebook_lines = fs.readFileSync(notebook_path, { encoding: 'utf8', flag: 'r' }).split("\n");
       notebook_lines.unshift(null); // this way offset lines to start at index 1
 
-      source_mapping = almost_absolute_code_line_numbers_map(notebook_lines);
+  find_source_blocks(notebook_lines).forEach(({ source_line, lines_of_code }) => {
 
-      cached_processing[filename] = source_mapping;
+    let block     = notebook_lines.slice(source_line, source_line + lines_of_code);
+    let formatted = block.map((line) => {
+      return line // remove enclosing quotes and insert true newline
+        .trim()
+        .replace(/^"/, '')
+        .replace(/",?$/, '')
+        .replace(/\\n/, "\n");
+    }).join('');
 
+
+    let reported_errors = child_process
+      .spawnSync('flake8', ['--exit-zero', '-'], { input: formatted, encoding: 'utf8' })
+      .stdout
+      .split("\n");
+
+
+    reported_errors.forEach((reported_error) => {
       if (debug) {
-        source_mapping.forEach((mapping_line, i) => {
-          if (i === 0) return; // fake value we push at the front
-
-          console.log([i, mapping_line, notebook_lines[mapping_line]]);
-          process.stdout.write("\n");
-        });
+        console.log(reported_error);
       }
-    }
 
-    let line_number   = source_mapping[error_information[2]];
-    // 4 is the indentation level of embeded source code, +1 for the quote character
-    let column        = error_information[3] + 5;
-    let error_message = `${error_information[4]} ${error_information[5]}`;
-    process.stdout.write(
-      `::error file=${filename},line=${line_number},col=${column}::${error_message}\n`
-    );
-  }
-});
+      let error_information = reported_error.match(flake8_error_format);
+      
+      if (!error_information) {
+        return;
+      }
+
+      // As we pass contents to flake8 via stdin it expects them to be python files,
+      // however in notebooks the last line of a code block does not end in a newline.
+      // We ignore these warnings
+      // W292 no newline at end of file
+      if (error_information[4] === 'W292') {
+        return;
+      }
+
+      let line_number   = source_line + parseInt(error_information[2], 10) - 1;
+      // 4 is the indentation level of embeded source code, +1 for the quote character
+      let column        = error_information[3] + 5;
+      let error_message = `${error_information[4]} ${error_information[5]}`;
+
+      process.stdout.write(
+        `::error file=${notebook_path},line=${line_number},col=${column}::${error_message}\n`
+      );
+    });
+  });
+}
 
 
 if (has_errors) {
@@ -73,17 +80,27 @@ if (has_errors) {
 
 
 // HELPER FUNCTIONS
-
-function almost_absolute_code_line_numbers_map(lines) {
-  let mapping = [null];
-
-  find_source_blocks(lines).forEach(({ source_line, lines_of_code }) => {
-    for(let i = 0; i < lines_of_code; i++) {
-      mapping.push(source_line + i);
+function* find_notebook_files(directory_path) {
+  let directory = fs.opendirSync(directory_path);
+  let entry;
+  while ((entry = directory.readSync()) !== null) {
+    if (entry.isFile()) {
+      if (entry.name.match(/.ipynb$/)) {
+        yield directory_path + '/' + entry.name;
+      }
     }
-  });
 
-  return mapping;
+    if (entry.isDirectory()) {
+      if (entry.name.match(/^\.git$/)) {
+        continue; // skip .git folder traversal for improved speed
+      }
+
+      yield* find_notebook_files(directory_path + '/' + entry.name);
+    }
+  }
+
+  directory.close();
+  return;
 }
 
 // locate within the notebook lines the source blocks, their starting
