@@ -61,6 +61,8 @@ for(let notebook_path of find_notebook_files('.')) {
         return;
       }
 
+      has_errors = true;
+
       let line_number   = source_line + parseInt(error_information[2], 10) - 1;
       // 4 is the indentation level of embeded source code, +1 for the quote character
       let column        = error_information[3] + 5;
