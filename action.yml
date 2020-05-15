@@ -1,5 +1,5 @@
 name: 'Flake8 Jupyter Notebook'
-description: 'Does PEP8 validation for your python Jupyter Notebooks'
+description: 'Runs code validation via flake8 for Python code within Jupyter Notebooks'
 branding:
   icon: 'check-circle'
   color: 'yellow'
