@@ -1,4 +1,4 @@
-name: 'flake8-nb action'
+name: 'Flake8 Jupyter Notebook'
 description: 'Does PEP8 validation for your python Jupyter Notebooks'
 inputs:
   debug:
