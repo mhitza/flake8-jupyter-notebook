@@ -17,7 +17,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: mhitza/flake8-jupyter-notebook@master
+    - uses: mhitza/flake8-jupyter-notebook@v1.0
 ```
 
 ![annotation-screenshot]
