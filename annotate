@@ -82,6 +82,12 @@ for(let notebook_path of find_notebook_files('.')) {
       return;
     }
 
+    if (error_information[4] === 'E305' && block_line_number === 0) {
+      // don't report on Expected 2 blank lines after end of function or class
+      // when reported for the first line of a block
+      return;
+    }
+
     if (error_information[4] === 'E402') {
       // don't report on E402 module level import not at top of file
       // as it's custom for each code block to specify it's additional imports,
