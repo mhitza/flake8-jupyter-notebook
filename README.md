@@ -43,6 +43,12 @@ input to [flake8][1].
 
 ## Known limitations
 
+First of **it only supports version format 4 for notebooks**. It will just silently skip
+over other notebook formats, as it's using *regular expressions around indentation level* to
+extract source blocks. If you're of any JavaScript JSON parser that keeps track of the
+source line parsed I'd be happy to hear about it.
+
+
 Because of implementation details and Jupyter notebook specifics, some warnings and errors
 reported by [flake8][1] are ignored. The following list is not necessarily exhaustive and
 prone to be updated based on more testing.
