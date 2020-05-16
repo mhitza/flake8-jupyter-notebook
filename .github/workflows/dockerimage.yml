@@ -7,6 +7,7 @@ on:
       - Dockerfile
       - annotate
       - entrypoint.sh
+      - action.yml
   release:
     types: [ created ]
 
