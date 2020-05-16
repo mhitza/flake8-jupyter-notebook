@@ -1,31 +1,27 @@
 name: Build & Publish Image
 
 on:
-  push:
-    branches: [ master ]
-    paths: 
-      - Dockerfile
-      - annotate
-      - entrypoint.sh
-      - action.yml
   release:
     types: [ created ]
 
 jobs:
-  docker-hub-login:
+  release-image:
     runs-on: ubuntu-latest
-    steps:
-      - name: login to Docker Hub
-        run: |
-          docker login -u mhitza -p "${{ secrets.DOCKER_HUB_TOKEN }}"
-          
-  latest-image:
-    if: ${{ github.event_name }} === 'push' 
-    runs-on: ubuntu-latest
-    needs: [ docker-hub-login ]
     steps:
     - uses: actions/checkout@v2
+
+    - name: login to Docker Hub
+      run: |
+        docker login -u mhitza -p "${{ secrets.DOCKER_HUB_TOKEN }}"
+
+    - name: setup TAG_NAME
+      run: |
+        export TAG_NAME=${{ github.event.release.tag_name }}
+        echo "::set-env name=TAG_NAME::$TAG_NAME"
+
     - name: Build
-      run: docker build . --file Dockerfile --tag mhitza/flake8-jupyter-notebook-github-action:latest
+      run:
+        docker build . --file Dockerfile --tag mhitza/flake8-jupyter-notebook-github-action:${{ env.TAG_NAME }}
+
     - name: Publish
-      run: docker push mhitza/flake8-jupyter-notebook-github-action:latest
+      run: docker push mhitza/flake8-jupyter-notebook-github-action:${{ env.TAG_NAME }}
