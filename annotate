@@ -144,7 +144,8 @@ function find_source_blocks(lines) {
 
     let cell_type = find_cell_type(i, lines);
 
-    if (match) {
+    // Also make sure to ignore empty code blocks, see https://github.com/mhitza/flake8-jupyter-notebook/issues/1
+    if (match && lines[i].match(/[^\]],?$/)) {
       let count = count_source_lines(i, lines);
 
       if (cell_type === 'code') {
