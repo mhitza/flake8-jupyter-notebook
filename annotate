@@ -94,6 +94,13 @@ for(let notebook_path of find_notebook_files('.')) {
       return;
     }
 
+    if (error_information[4] === 'F821' && error_information[5].match(/display/)) {
+      // don't report on F821 undefined name 'display'
+      // as display is a builtin function in Jupyter Notebooks
+      // and flake8 doesn't like it
+      return;
+    }
+
     // 4 is the indentation level of embeded source code, +1 for the quote character
     let column        = error_information[3] + 5;
     let error_message = `${error_information[4]} ${error_information[5]}`;
