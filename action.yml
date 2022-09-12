@@ -10,4 +10,4 @@ inputs:
     default: false
 runs:
   using: 'docker'
-  image: 'Dockerfile'
+  image: 'docker://mhitza/flake8-jupyter-notebook-github-action:v1'

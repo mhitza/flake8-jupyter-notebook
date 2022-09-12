@@ -58,6 +58,8 @@ prone to be updated based on more testing.
    when it's reported for the first line of a code block.
  - [E402 Module level import not at top of file][E402]. In the tested notebooks different
    code sections will import modules just when needed.
+ - [F821 Undefined name name][F821]. When the undefined name stands for the Jupyter builtin function
+   `display`
 
 
 
@@ -65,6 +67,7 @@ prone to be updated based on more testing.
 [annotation-screenshot]: https://user-images.githubusercontent.com/273079/82093965-d6585d00-9704-11ea-9159-c8b72a9b89c8.png
 [3]: https://github.com/s-weigand/flake8-nb
 [4]: annotate
-[E302]: http://archive.vn/Bj1tc
-[E305]: http://archive.vn/a3tr2
-[E402]: http://archive.vn/i7NWk
+[E302]: https://archive.vn/Bj1tc
+[E305]: https://archive.vn/a3tr2
+[E402]: https://archive.vn/i7NWk
+[F821]: https://archive.ph/Ysz7l
