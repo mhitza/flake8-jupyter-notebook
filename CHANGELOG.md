@@ -1,3 +1,7 @@
+## 1.2
+
+  - upgrade flake8 within image to version `7.0.0` (from `5.0.4`)
+
 ## 1.1
 
  - ignore flake8 reported error (code F821) when Jupyter notebook's internal display function is used
