@@ -4,7 +4,7 @@ notebooks.
 
 ## Motivation
 
-An easy way to automate the [flake8][1] code checks over the code blocks defined in a
+An easy way to automate [flake8][1] code checks over code blocks defined in a
 Jupyter notebook.
 
 
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - uses: mhitza/flake8-jupyter-notebook@v1
 ```
 
@@ -26,38 +26,37 @@ jobs:
 ## Implementation details
 
 There is an existing project, called [flake8-nb][3] that performs the same task as this
-action. While initial implementation tried to wrapped the annotation script around that
-utility, it was abandoned and instead flake8 was used instead because:
+action. While initial implementation tried to wrapp the annotation script around that
+utility, it was abandoned and instead flake8 was used because:
 
   1. [flake8-nb][3] did not report absolute line number within the notebook file, instead it
-     reported only relative line numbers within the checked code block.
-  2. A notebook might be checked in the repository without the code cells having been
-     evaluated. In that case [flake8-nb][3] would report multiple cells without a number,
+     reported only relative line numbers within the checked code blocks.
+  2. A notebook might be checked in the repository without the code cells
+     evaluated. In that case [flake8-nb][3] would report on cells without a number,
      and tracking back from the reported error to absolute line numbers became a more
      difficult task than wrapping around [flake8][1].
 
 In order to check the notebook, the [annotate][4] script keeps track of all the various code
-blocks within the notebook, concatenates them into a single file and then pipes it as
-input to [flake8][1]. 
+blocks within the notebook, concatenates them into a single source and pipes it into [flake8][1].
 
 
 ## Known limitations
 
-First of **it only supports version format 4 for notebooks**. It will just silently skip
-over other notebook formats, as it's using *regular expressions around indentation level* to
-extract source blocks. If you're of any JavaScript JSON parser that keeps track of the
-source line parsed I'd be happy to hear about it.
+**Supports version 4 compatible notebook formats**. It will just silently skip
+over other notebook formats, as it's using *regular expressions based on indentation level* to
+extract source blocks. If you're of aware of any JavaScript JSON parser that keeps track of the
+source lines parsed I'd be happy to hear about it.
 
 
-Because of implementation details and Jupyter notebook specifics, some warnings and errors
-reported by [flake8][1] are ignored. The following list is not necessarily exhaustive and
-prone to be updated based on more testing.
+Due to implementation details and Jupyter notebook specific idiosyncrasies, some warnings and errors
+reported by [flake8][1] are ignored by default (hardcoded in source code). The following list is not
+necessarily exhaustive and might change based on testing and issues raised.
 
  - [E302 Expected 2 blank lines][E302] when reported for the first line of a code block.
- - [E305 Expected 2 blank lines after end of function or class][E305], as with E302 just
-   when it's reported for the first line of a code block.
- - [E402 Module level import not at top of file][E402]. In the tested notebooks different
-   code sections will import modules just when needed.
+ - [E305 Expected 2 blank lines after end of function or class][E305], as with E302,
+   when reported for the first line of a code block.
+ - [E402 Module level import not at top of file][E402]. In tested notebooks
+   code sections will tend to import modules just before usage.
  - [F821 Undefined name name][F821]. When the undefined name stands for the Jupyter builtin function
    `display`
 
