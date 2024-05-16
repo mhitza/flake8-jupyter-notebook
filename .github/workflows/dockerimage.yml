@@ -27,7 +27,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: set OVERRIDE_TAG_NAME
-      run: echo OVERRIDE_TAG_NAME=$(echo ${{ env.TAG_NAME }} | grep -P -o "^v\d+[^.]") >> $GITHUB_ENV
+      run: echo OVERRIDE_TAG_NAME=$(echo ${{ env.TAG_NAME }} | grep -P -o "^v\d*[^.]") >> $GITHUB_ENV
 
     - name: Build & Publish
       uses: docker/build-push-action@v5
