@@ -4,26 +4,34 @@ on:
   release:
     types: [ created ]
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ghcr.io/mhitza/flake8-jupyter-notebook-github-action
+  TAG_NAME: ${{ github.event.release.tag_name }}
+
 jobs:
   release-image:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
-    - name: login to Docker Hub
-      run: |
-        docker login -u mhitza -p "${{ secrets.DOCKER_HUB_TOKEN }}"
+    - name: Log in to the Container registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: setup TAG_NAME
-      run: echo "TAG_NAME=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
+    - name: set OVERRIDE_TAG_NAME
+      run: echo OVERRIDE_TAG_NAME=$(echo ${{ env.TAG_NAME }} | grep -P -o "^v\d+[^.]") >> $GITHUB_ENV
 
-    - name: Build
-      run: |
-        docker build . --file Dockerfile \
-          --tag mhitza/flake8-jupyter-notebook-github-action:${{ env.TAG_NAME }} \
-          --tag mhitza/flake8-jupyter-notebook-github-action:v1
-        
-    - name: Publish
-      run: |
-        docker push mhitza/flake8-jupyter-notebook-github-action:${{ env.TAG_NAME }}
-        docker push mhitza/flake8-jupyter-notebook-github-action:v1
+    - name: Build & Publish
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ env.IMAGE_NAME }}:${{ env.TAG_NAME }},${{ env.IMAGE_NAME }}:${{ env.OVERRIDE_TAG_NAME }}
