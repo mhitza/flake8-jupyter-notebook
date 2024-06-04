@@ -8,6 +8,9 @@ inputs:
     required: false
     description: Dump debug information
     default: false
+  ignore:
+    required: false
+    description: RegExp rules (one per line) for filepaths to exclude
 runs:
   using: 'docker'
   image: 'docker://ghcr.io/mhitza/flake8-jupyter-notebook-github-action:v1'

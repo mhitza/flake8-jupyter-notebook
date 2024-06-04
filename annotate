@@ -14,8 +14,23 @@ let cached_processing = {};
 
 const debug = process.env.INPUT_DEBUG === 'true';
 
+const ignore_rules = process.env.INPUT_IGNORE;
+
+let ignore_regexs = [];
+if (ignore_rules !== undefined && ignore_rules.trim() !== "") {
+  ignore_regexs = ignore_rules.trim().split("\n").map(e => new RegExp(e));
+}
 
 for(let notebook_path of find_notebook_files('.')) {
+  if (ignore_regexs.some(re => re.test(notebook_path))) {
+    if (debug) {
+      process.stdout.write(notebook_path + " ignored via regexp rule\n");
+    }
+
+    continue;
+  }
+
+
   if (debug) {
     process.stdout.write(notebook_path + "\n");
   }
@@ -25,7 +40,7 @@ for(let notebook_path of find_notebook_files('.')) {
 
   let source_blocks = find_source_blocks(notebook_lines);
 
-  let extracted_source_code = source_blocks
+  let transformed_source_blocks = source_blocks
 
     .map(({ source_line, lines_of_code }) => { // returns array of formatted lines; ready to join()
 
@@ -44,8 +59,14 @@ for(let notebook_path of find_notebook_files('.')) {
             .replace(/\\n/g, "\n")
             .replace(/\\"/g, '"');
         });
-    })
+    });
 
+  if (transformed_source_blocks.length === 0) {
+    process.stdout.write(notebook_path + " skipped, as it's either an empty file or unparsable!\n");
+    continue;
+  }
+
+  const extracted_source_code = transformed_source_blocks
     .reduce((accumulator, current) => { // without initial value accumulator is first value of array
       return accumulator.concat(current);
     });
@@ -123,8 +144,10 @@ function* find_notebook_files(directory_path) {
   let entry;
   while ((entry = directory.readSync()) !== null) {
     if (entry.isFile()) {
-      if (entry.name.match(/.ipynb$/)) {
-        yield directory_path + '/' + entry.name;
+      const filename = entry.name;
+      const path = directory_path + '/' + filename;
+      if (filename.match(/.ipynb$/)) {
+        yield path;
       }
     }
 
