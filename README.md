@@ -1,5 +1,6 @@
 A container and a wrapper script around [flake8][1] to validate python code within Jupyter
-notebooks.
+notebooks. flake8 will pick up configuration files in your project, but [some options are not supported](#flake8-configuration-support) and
+will cause the action to fail (sommetimes silently).
 
 
 ## Motivation
@@ -18,6 +19,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: mhitza/flake8-jupyter-notebook@v1
+      with:
+        debug: 'false' # set 'true' for additional logging
+        # paths and files to ignore, one regexp rule per line
+        ignore: |
+          tests/
+          test\.ipynb$
 ```
 
 ![annotation-screenshot]
@@ -60,6 +67,17 @@ necessarily exhaustive and might change based on testing and issues raised.
  - [F821 Undefined name name][F821]. When the undefined name stands for the Jupyter builtin function
    `display`
 
+
+
+### flake8 configuration support
+
+The following options which can be defined in a flake8 configuration file are not supported.
+
+Any option that changes the output of flake8: `--quiet`, `--count`, `--format` (only default supported),
+`--show-source`, `--statistics`.
+
+Anything that relies on filename/paths, as code is passed in to flake8 via stdin.
+Thus the following options will have no effect: `--exclude`, `--extend-exclude`, `--filename`, `--per-file-ignores`
 
 
 [1]: https://flake8.pycqa.org/en/latest/
