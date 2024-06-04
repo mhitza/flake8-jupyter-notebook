@@ -1,6 +1,6 @@
 A container and a wrapper script around [flake8][1] to validate python code within Jupyter
 notebooks. flake8 will pick up configuration files in your project, but [some options are not supported](#flake8-configuration-support) and
-will cause the action to fail (sommetimes silently).
+will cause the action to fail (sometimes silently).
 
 
 ## Motivation
