@@ -56,8 +56,9 @@ for(let notebook_path of find_notebook_files('.')) {
             .trim()
             .replace(/^"/, '')
             .replace(/",?$/, '')
-            .replace(/\\n/g, "\n")
-            .replace(/\\"/g, '"');
+            .replace(/\\\\/g, "\\")
+            .replace(/\\"/g, '"')
+            .replace(/\\n/g, "\n");
         });
     });
 
@@ -73,7 +74,7 @@ for(let notebook_path of find_notebook_files('.')) {
 
 
   let reported_errors = child_process
-    .spawnSync('flake8', ['--exit-zero', '-'], { input: extracted_source_code.join(''), encoding: 'utf8' })
+    .spawnSync('flake8', ['--exit-zero', '-'], { input: extracted_source_code.join('\n'), encoding: 'utf8' })
     .stdout
     .split("\n");
 
