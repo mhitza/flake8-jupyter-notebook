@@ -69,7 +69,7 @@ for(let notebook_path of find_notebook_files('.')) {
   const extracted_source_code = transformed_source_blocks
     .reduce((accumulator, current) => { // without initial value accumulator is first value of array
       return accumulator.concat(current);
-    });
+    }, []); // Add empty array as initial value to prevent "Reduce of empty array with no initial value" error
 
 
   let reported_errors = child_process
