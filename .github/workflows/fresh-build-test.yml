@@ -1,0 +1,12 @@
+name: Fresh build test
+on:
+  workflow_dispatch:
+
+jobs:
+  fresh-build-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+    - name: build fresh image
+      run: docker build -t action-image .
+    - run: docker --rm --volume "$PWD:$PWD" --workdir $PWD --env INPUT_DEBUG='true' action-image

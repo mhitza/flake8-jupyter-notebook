@@ -1,4 +1,4 @@
-name: Testing PRs
+name: Smoke test
 on:
   workflow_dispatch:
   pull_request:
