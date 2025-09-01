@@ -125,6 +125,7 @@ for(let notebook_path of find_notebook_files('.')) {
     let column        = error_information[3] + 5;
     let error_message = `${error_information[4]} ${error_information[5]}`;
 
+    process.stdout.write(`${notebook_path}:${file_line_number}\n`);
     process.stdout.write(
       `::error file=${notebook_path},line=${file_line_number},col=${column}::${error_message}\n`
     );
