@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - uses: mhitza/flake8-jupyter-notebook@v1
       with:
         debug: 'false' # set 'true' for additional logging
