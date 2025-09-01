@@ -276,7 +276,7 @@ function parseJsonWithLineTracking(source) {
     skipWhitespace();
     
     const result = [];
-    const lineMap = arrayLineNum; // For arrays, we return the line number of the array itself
+    const lineMap = []; // For arrays, we return an array of line numbers/objects
     
     // Handle empty array
     if (source[index] === ']') {
@@ -296,6 +296,15 @@ function parseJsonWithLineTracking(source) {
       
       const valueResult = parseValue();
       result.push(valueResult.value);
+      
+      // Store line number/map for this array element
+      if (valueResult.lineMap !== undefined) {
+        // If the value has its own line map (nested object/array), use that
+        lineMap.push(valueResult.lineMap);
+      } else {
+        // For primitive values, store the line number
+        lineMap.push(valueResult.line);
+      }
       
       skipWhitespace();
       
@@ -334,10 +343,12 @@ function runTest() {
   const testJson = `{
   "a": {
     "b": {
-      "c": {
-      }
+      "c": {}
     },
-    "b1": ["01", "02"]
+    "b1": [
+        "01",
+        "02"
+    ]
   }
 }`;
 
@@ -361,7 +372,7 @@ function runTest() {
     console.log('\nAPI Test as specified in issue:');
     console.log(`helper["a"]["b1"] = ${result.helper["a"]["b1"]}`);
     console.log(`Expected line 7, actual: ${result.helper["a"]["b1"]}`);
-    console.log(`Test passes: ${result.helper["a"]["b1"] === 7}`);
+    console.log(`Test passes: ${Array.isArray(result.helper["a"]["b1"]) && result.helper["a"]["b1"][0] === 7}`);
     
     // Additional functionality tests
     console.log('\nAdditional tests:');
@@ -403,7 +414,7 @@ function runAdditionalTests() {
   try {
     const result = parseJsonWithLineTracking(mixedArrayJson);
     console.log('Mixed array helper:', result.helper.items);
-    console.log('Test passes:', typeof result.helper.items === 'number');
+    console.log('Test passes:', Array.isArray(result.helper.items));
   } catch (error) {
     console.error('Mixed array test error:', error.message);
   }
@@ -439,7 +450,7 @@ function runAdditionalTests() {
     const result = parseJsonWithLineTracking(emptyJson);
     console.log('Empty object helper:', JSON.stringify(result.helper.emptyObj));
     console.log('Empty array helper:', result.helper.emptyArr);
-    console.log('Test passes:', typeof result.helper.emptyArr === 'number');
+    console.log('Test passes:', Array.isArray(result.helper.emptyArr));
   } catch (error) {
     console.error('Empty structures test error:', error.message);
   }
