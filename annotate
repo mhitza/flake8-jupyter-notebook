@@ -50,14 +50,13 @@ for(let notebook_path of find_notebook_files('.')) {
         .replace(/",?$/, '\n",');
 
       return source_code_lines.map((line) => {
-          return line // remove enclosing quotes and insert true newline & quotes
+          const trimmed = line // remove enclosing quotes and insert true newline & quotes
             .trim()
             .replace(/^"/, '')
-            .replace(/",?$/, '')
-            .replace(/\\\\/g, "\\")
-            .replace(/\\"/g, '"')
-            .replace(/\\n/g, "\n");
-        });
+            .replace(/",?$/, '');
+
+          return parse_json_string(trimmed);
+      });
     });
 
   if (transformed_source_blocks.length === 0) {
@@ -70,7 +69,11 @@ for(let notebook_path of find_notebook_files('.')) {
       return accumulator.concat(current);
     }, []); // Add empty array as initial value to prevent "Reduce of empty array with no initial value" error
 
-
+  if (debug) {
+    let target = notebook_path + ".py";
+    fs.writeFileSync(target, extracted_source_code.join(''));
+    console.log(`wrote ${target} file`);
+  }
   let reported_errors = child_process
     .spawnSync('flake8', ['--exit-zero', '-'], { input: extracted_source_code.join(''), encoding: 'utf8' })
     .stdout
@@ -239,4 +242,53 @@ function absolute_line_number(reported_line_number, source_blocks) {
       }
     }
   }
+}
+
+/**
+ * Parses a JSON string literal (e.g., with escape sequences) and returns the unescaped JavaScript string.
+ * This function expects the *inner contents* of a JSON string, i.e. no enclosing quotes.
+ * Here be LLM dragons.
+ * @param {string} str - The string to parse (as it would appear inside JSON quotes).
+ * @returns {string} - The resulting unescaped JavaScript string.
+ */
+function parse_json_string(str) {
+    let result = '';
+    let i = 0;
+    const len = str.length;
+
+    while (i < len) {
+        const ch = str[i];
+        if (ch !== '\\') {
+            result += ch;
+            i++;
+        } else {
+            // Handle escape sequences
+            i++;
+            if (i >= len) throw new Error("Unexpected end of input after '\\'");
+            const esc = str[i];
+            switch (esc) {
+                case '"': result += '"'; i++; break;
+                case '\\': result += '\\'; i++; break;
+                case '/': result += '/'; i++; break;
+                case 'b': result += '\b'; i++; break;
+                case 'f': result += '\f'; i++; break;
+                case 'n': result += '\n'; i++; break;
+                case 'r': result += '\r'; i++; break;
+                case 't': result += '\t'; i++; break;
+                case 'u':
+                    // Unicode escape sequence: \uXXXX
+                    if (i + 4 >= len) throw new Error("Incomplete unicode escape sequence");
+                    const hex = str.substr(i + 1, 4);
+                    if (!/^[0-9a-fA-F]{4}$/.test(hex)) {
+                        throw new Error("Invalid unicode escape sequence: \\u" + hex);
+                    }
+                    result += String.fromCharCode(parseInt(hex, 16));
+                    i += 5; // move past 'u' and 4 hex digits
+                    break;
+                default:
+                    throw new Error("Invalid escape sequence: \\" + esc);
+            }
+        }
+    }
+    return result;
 }
