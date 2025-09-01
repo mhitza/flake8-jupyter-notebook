@@ -441,7 +441,6 @@ function runAdditionalTests() {
     console.log('Empty array helper:', result.helper.emptyArr);
     console.log('Test passes:', typeof result.helper.emptyArr === 'number');
   } catch (error) {
-module.exports = { parseJsonWithLineTracking };
     console.error('Empty structures test error:', error.message);
   }
 }
@@ -451,3 +450,5 @@ if (require.main === module) {
   runTest();
   runAdditionalTests();
 }
+
+module.exports = { parseJsonWithLineTracking };
