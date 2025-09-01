@@ -7,7 +7,7 @@ inputs:
   debug:
     required: false
     description: Dump debug information
-    default: false
+    default: 'false'
   ignore:
     required: false
     description: RegExp rules (one per line) for filepaths to exclude
