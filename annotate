@@ -10,19 +10,17 @@ const flake8_error_format = new RegExp(/^([^#]+)[^:]*:(\d+):(\d+): (\w\d+) (.*)/
 
 let has_errors = false;
 
-let cached_processing = {};
-
 const debug = process.env.INPUT_DEBUG === 'true';
 
 const ignore_rules = process.env.INPUT_IGNORE;
 
-let ignore_regexs = [];
+let ignore_regexps = [];
 if (ignore_rules !== undefined && ignore_rules.trim() !== "") {
-  ignore_regexs = ignore_rules.trim().split("\n").map(e => new RegExp(e));
+  ignore_regexps = ignore_rules.trim().split("\n").map(e => new RegExp(e));
 }
 
 for(let notebook_path of find_notebook_files('.')) {
-  if (ignore_regexs.some(re => re.test(notebook_path))) {
+  if (ignore_regexps.some(re => re.test(notebook_path))) {
     if (debug) {
       process.stdout.write(notebook_path + " ignored via regexp rule\n");
     }
@@ -46,8 +44,8 @@ for(let notebook_path of find_notebook_files('.')) {
 
       let source_code_lines = notebook_lines.slice(source_line, source_line + lines_of_code);
 
-      // add a newline at the last element of the array otherwise we're gonna have big troubles
-      // when mergin blocks, as the last line never contains a newline
+      // add a newline as the last element of the array otherwise we're going to have bigger troubles
+      // when merging blocks, as the last line never contains a newline
       source_code_lines[source_code_lines.length - 1] = source_code_lines[source_code_lines.length - 1]
         .replace(/",?$/, '\n",');
 
@@ -111,7 +109,7 @@ for(let notebook_path of find_notebook_files('.')) {
 
     if (error_information[4] === 'E402') {
       // don't report on E402 module level import not at top of file
-      // as it's custom for each code block to specify it's additional imports,
+      // as it's custom for each code block to specify its additional imports,
       // at least from the examples I've seen
       return;
     }
@@ -123,7 +121,7 @@ for(let notebook_path of find_notebook_files('.')) {
       return;
     }
 
-    // 4 is the indentation level of embeded source code, +1 for the quote character
+    // 4 is the indentation level of embedded source code, +1 for the quote character
     let column        = error_information[3] + 5;
     let error_message = `${error_information[4]} ${error_information[5]}`;
 
@@ -162,7 +160,6 @@ function* find_notebook_files(directory_path) {
   }
 
   directory.close();
-  return;
 }
 
 // locate within the notebook lines the source blocks, their starting
@@ -227,7 +224,7 @@ function count_source_lines(source_property_line_number, content_lines) {
 
 
 function absolute_line_number(reported_line_number, source_blocks) {
-  let counter = 0; // a contignuous line number indicator, within the extracted source code
+  let counter = 0; // a continuous line number indicator, within the extracted source code
 
   for(let i = 0; i < source_blocks.length; i++) {
     let { source_line, lines_of_code } = source_blocks[i];
